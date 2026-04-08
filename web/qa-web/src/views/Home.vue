@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { store } from '../store';
@@ -119,6 +119,12 @@ import {
 
 const router = useRouter();
 const { t } = useI18n();
+
+onMounted(() => {
+  if (store.state.doctors.length === 0) {
+    store.fetchDoctors();
+  }
+});
 
 const statistics = computed(() => store.getStatistics());
 const activeDoctors = computed(() => store.getActiveDoctors());

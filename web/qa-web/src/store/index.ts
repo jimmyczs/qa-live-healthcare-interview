@@ -1,7 +1,7 @@
 import { reactive } from 'vue';
-import doctorData from '../data/doctor-user-list.json';
 import patientData from '../data/patient-user.json';
 import questionData from '../data/question-list.json';
+import { getAllDoctors, ApiDoctor } from '../api/doctor';
 
 export interface Doctor {
   id: string;
@@ -46,7 +46,7 @@ interface State {
 }
 
 const state = reactive<State>({
-  doctors: doctorData as Doctor[],
+  doctors: [],
   patients: patientData as Patient[],
   questions: questionData as Question[],
   currentDoctor: null,
@@ -55,6 +55,25 @@ const state = reactive<State>({
 
 export const store = {
   state,
+
+  /**
+   * 从后端API加载医生数据
+   */
+  async fetchDoctors(): Promise<void> {
+    const apiDoctors = await getAllDoctors();
+    state.doctors = apiDoctors.map(apiDoc => ({
+      id: apiDoc.id,
+      username: apiDoc.username,
+      password: '',
+      name: apiDoc.name,
+      title: apiDoc.title,
+      department: apiDoc.department,
+      avatar: apiDoc.avatar,
+      experience: apiDoc.experience,
+      specialties: apiDoc.specialties,
+      isActive: apiDoc.active,
+    })) as Doctor[];
+  },
 
   loginDoctor(username: string, password: string): Doctor | null {
     const doctor = state.doctors.find(
