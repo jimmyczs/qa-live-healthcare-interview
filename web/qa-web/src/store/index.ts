@@ -1,4 +1,4 @@
-import { reactive } from 'vue';
+import { reactive, computed } from 'vue';
 import patientData from '../data/patient-user.json';
 import questionData from '../data/question-list.json';
 import { getAllDoctors, ApiDoctor } from '../api/doctor';
@@ -16,12 +16,24 @@ export interface Doctor {
   isActive: boolean;
 }
 
+/** 患者用户（来自本地 JSON） */
 export interface Patient {
   id: string;
   name: string;
   birthday: string;
   phone: string;
   gender: string;
+}
+
+/** 登录后的患者用户信息（来自后端 API） */
+export interface PatientUser {
+  id: string;
+  username: string;
+  name: string;
+  gender: string;
+  birthday: string;
+  phone?: string;
+  active: boolean;
 }
 
 export interface Question {
@@ -43,6 +55,7 @@ interface State {
   questions: Question[];
   currentDoctor: Doctor | null;
   currentPatient: Patient | null;
+  currentPatientUser: PatientUser | null;  // API 登录后的患者用户
 }
 
 const state = reactive<State>({
@@ -51,7 +64,28 @@ const state = reactive<State>({
   questions: questionData as Question[],
   currentDoctor: null,
   currentPatient: null,
+  currentPatientUser: restorePatientUser(),
 });
+
+/**
+ * 从 localStorage 恢复患者登录态
+ */
+function restorePatientUser(): PatientUser | null {
+  try {
+    const saved = localStorage.getItem('patientUser');
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistPatientUser(user: PatientUser | null) {
+  if (user) {
+    localStorage.setItem('patientUser', JSON.stringify(user));
+  } else {
+    localStorage.removeItem('patientUser');
+  }
+}
 
 export const store = {
   state,
@@ -112,6 +146,23 @@ export const store = {
 
   logoutPatient() {
     state.currentPatient = null;
+    state.currentPatientUser = null;
+    persistPatientUser(null);
+  },
+
+  /**
+   * 通过 API 登录后设置当前登录的患者用户（持久化到 localStorage）
+   */
+  loginPatient(user: PatientUser) {
+    state.currentPatientUser = user;
+    persistPatientUser(user);
+  },
+
+  /**
+   * 判断患者是否已通过 API 登录
+   */
+  isPatientLoggedIn(): boolean {
+    return state.currentPatientUser !== null;
   },
 
   getQuestionsByDoctor(doctorId: string): Question[] {

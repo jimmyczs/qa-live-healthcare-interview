@@ -35,7 +35,24 @@
             </a-menu>
           </template>
         </a-dropdown>
-        <a-button type="primary" class="login-btn" @click="navigateTo('/doctor/login')">
+
+        <!-- 患者登录态：已登录 -->
+        <template v-if="isPatientLoggedIn">
+          <span class="welcome-text">
+            <UserOutlined /> {{ t('header.welcome', { name: patientName }) }}
+          </span>
+          <a-button class="logout-btn" @click="handlePatientLogout">{{ t('header.logout') }}</a-button>
+        </template>
+
+        <!-- 患者未登录态 -->
+        <template v-else>
+          <a-button type="primary" class="patient-login-btn" @click="navigateTo('/patient/login')">
+            <UserOutlined />
+            {{ t('header.patientLoginButton') }}
+          </a-button>
+        </template>
+
+        <a-button class="doctor-login-btn" @click="navigateTo('/doctor/login')">
           <UserOutlined />
           {{ t('header.loginButton') }}
         </a-button>
@@ -49,6 +66,8 @@ import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { HomeOutlined, MessageOutlined, TeamOutlined, InfoCircleOutlined, UserOutlined, GlobalOutlined } from '@ant-design/icons-vue';
+import { store, PatientUser } from '../store';
+import { message, Modal } from 'ant-design-vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -57,6 +76,13 @@ const selectedKeys = ref<string[]>(['home']);
 
 const currentLangLabel = computed(() => {
   return locale.value === 'zh' ? '中文' : 'EN';
+});
+
+// 患者登录态
+const isPatientLoggedIn = computed(() => store.isPatientLoggedIn());
+const patientName = computed(() => {
+  const user: PatientUser | null = (store.state as any).currentPatientUser;
+  return user?.name || '';
 });
 
 const handleLanguageChange = ({ key }: { key: string }) => {
@@ -79,6 +105,24 @@ watch(() => route.path, (newPath) => {
 const navigateTo = (path: string) => {
   router.push(path);
 };
+
+async function handlePatientLogout() {
+  Modal.confirm({
+    title: t('header.logoutConfirm'),
+    okText: t('common.chinese') === '语言' ? '确定' : 'OK',
+    cancelText: t('common.chinese') === '语言' ? '取消' : 'Cancel',
+    onOk: async () => {
+      try {
+        const { logoutPatient: apiLogoutPatient } = await import('../api/patient');
+        await apiLogoutPatient();
+      } catch (e) {
+        // 即使 API 调用失败，也要清除前端状态
+      }
+      store.logoutPatient();
+      message.info(t('header.logoutSuccess'));
+    },
+  });
+}
 </script>
 
 <style scoped>
@@ -158,5 +202,45 @@ const navigateTo = (path: string) => {
 .login-btn:hover {
   background: #73d13d;
   border-color: #73d13d;
+}
+
+.patient-login-btn {
+  background: #1890ff;
+  border-color: #1890ff;
+}
+
+.patient-login-btn:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+.doctor-login-btn {
+  background: #52c41a;
+  border-color: #52c41a;
+}
+
+.doctor-login-btn:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+.welcome-text {
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.logout-btn {
+  color: #999;
+  border-color: #d9d9d9;
+}
+
+.logout-btn:hover {
+  color: #ff4d4f;
+  border-color: #ff4d4f;
 }
 </style>
