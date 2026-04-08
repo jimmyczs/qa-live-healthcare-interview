@@ -3,42 +3,66 @@
     <div class="header-content">
       <div class="logo">
         <img src="https://images.pexels.com/photos/40568/medical-appointment-doctor-healthcare-40568.jpeg?auto=compress&cs=tinysrgb&w=100" alt="QA Live Healthcare" />
-        <span>QA Live Healthcare</span>
+        <span>{{ t('header.logo') }}</span>
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" mode="horizontal" class="nav-menu">
         <a-menu-item key="home" @click="navigateTo('/')">
           <HomeOutlined />
-          首页
+          {{ t('header.navHome') }}
         </a-menu-item>
         <a-menu-item key="consultation" @click="navigateTo('/consultation')">
           <MessageOutlined />
-          问诊
+          {{ t('header.navConsultation') }}
         </a-menu-item>
         <a-menu-item key="doctors" @click="navigateTo('/doctors')">
           <TeamOutlined />
-          医生
+          {{ t('header.navDoctors') }}
         </a-menu-item>
         <a-menu-item key="about" @click="navigateTo('/about')">
           <InfoCircleOutlined />
-          关于
+          {{ t('header.navAbout') }}
         </a-menu-item>
       </a-menu>
-      <a-button type="primary" class="login-btn" @click="navigateTo('/doctor/login')">
-        <UserOutlined />
-        医生登录
-      </a-button>
+      <div class="header-actions">
+        <a-dropdown :trigger="['click']">
+          <a-button class="lang-switch-btn" @click.prevent>
+            <GlobalOutlined /> {{ currentLangLabel }}
+          </a-button>
+          <template #overlay>
+            <a-menu @click="handleLanguageChange">
+              <a-menu-item key="zh">中文</a-menu-item>
+              <a-menu-item key="en">English</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+        <a-button type="primary" class="login-btn" @click="navigateTo('/doctor/login')">
+          <UserOutlined />
+          {{ t('header.loginButton') }}
+        </a-button>
+      </div>
     </div>
   </a-layout-header>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { HomeOutlined, MessageOutlined, TeamOutlined, InfoCircleOutlined, UserOutlined } from '@ant-design/icons-vue';
+import { useI18n } from 'vue-i18n';
+import { HomeOutlined, MessageOutlined, TeamOutlined, InfoCircleOutlined, UserOutlined, GlobalOutlined } from '@ant-design/icons-vue';
 
 const router = useRouter();
 const route = useRoute();
+const { t, locale } = useI18n();
 const selectedKeys = ref<string[]>(['home']);
+
+const currentLangLabel = computed(() => {
+  return locale.value === 'zh' ? '中文' : 'EN';
+});
+
+const handleLanguageChange = ({ key }: { key: string }) => {
+  locale.value = key;
+  localStorage.setItem('language', key);
+};
 
 watch(() => route.path, (newPath) => {
   if (newPath === '/') {
@@ -106,6 +130,24 @@ const navigateTo = (path: string) => {
   border: none;
   margin: 0 40px;
   line-height: 64px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lang-switch-btn {
+  border-color: #d9d9d9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lang-switch-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
 }
 
 .login-btn {
