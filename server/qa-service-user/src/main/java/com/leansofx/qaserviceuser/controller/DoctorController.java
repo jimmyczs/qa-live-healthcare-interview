@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/doctors")
@@ -47,16 +46,5 @@ public class DoctorController {
             return ResponseEntity.status(500)
                     .body(ApiResponse.error("Internal Server Error", e.getMessage()));
         }
-    }
-
-    /**
-     * 健康检查
-     */
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> healthCheck() {
-        return ResponseEntity.ok(Map.of(
-                "status", "UP",
-                "service", "qa-service-user"
-        ));
     }
 }

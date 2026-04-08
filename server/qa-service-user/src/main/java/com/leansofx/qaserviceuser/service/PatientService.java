@@ -52,11 +52,17 @@ public class PatientService {
      * 用户登录
      */
     public PatientDTO login(LoginRequest request) {
-        Patient patient = patientRepository.findByUsername(request.getUsername())
+        String inputUsername = request.getUsername();
+        Patient patient = patientRepository.findByUsername(inputUsername)
                 .orElse(null);
 
         // 统一提示：不泄露用户是否存在
         if (patient == null || !passwordEncoder.matches(request.getPassword(), patient.getPassword())) {
+            throw new RuntimeException("INVALID_CREDENTIALS");
+        }
+
+        // 大小写精确匹配（防止 DB collation 不区分大小写导致的安全绕过）
+        if (!inputUsername.equals(patient.getUsername())) {
             throw new RuntimeException("INVALID_CREDENTIALS");
         }
 

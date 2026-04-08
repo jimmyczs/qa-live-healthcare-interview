@@ -39,11 +39,3 @@ export async function getDoctorById(id: string): Promise<ApiDoctor> {
   if (!json.data) throw new Error('Doctor not found');
   return json.data;
 }
-
-/**
- * 健康检查
- */
-export async function healthCheck(): Promise<{ status: string; service: string }> {
-  const res = await fetch(`${BASE_URL}/api/doctors/health`);
-  return res.json();
-}

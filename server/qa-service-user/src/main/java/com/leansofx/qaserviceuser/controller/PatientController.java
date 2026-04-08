@@ -10,7 +10,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +33,7 @@ public class PatientController {
      * POST /api/patients/register
      */
     @PostMapping(value = "/register", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ApiResponse<PatientDTO>> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<PatientDTO>> register(@Valid @RequestBody RegisterRequest request) {
         try {
             // 前端校验：两次密码一致性（后端不做 confirmPassword 存储，仅做逻辑校验）
             if (!request.getPassword().equals(request.getConfirmPassword())) {
@@ -60,7 +64,7 @@ public class PatientController {
      * POST /api/patients/login
      */
     @PostMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ApiResponse<PatientDTO>> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<PatientDTO>> login(@Valid @RequestBody LoginRequest request) {
         try {
             PatientDTO result = patientService.login(request);
             return ResponseEntity.ok(ApiResponse.success(result));
@@ -117,5 +121,18 @@ public class PatientController {
         result.put("data", dataMap);
         result.put("error", null);
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 全局校验异常处理 - 捕获 @Valid 触发的 Bean Validation 异常
+     * 将字段级错误信息统一返回为 400 + VALIDATION_ERROR
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
+        FieldError fieldError = ex.getBindingResult().getFieldError();
+        String message = fieldError != null ? fieldError.getDefaultMessage() : "请求参数校验失败";
+        logger.warn("Validation failed: {}", message);
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error("VALIDATION_ERROR", message));
     }
 }
